@@ -11,6 +11,16 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -25,7 +35,9 @@ import org.openqa.selenium.support.ui.WebDriverWait;
  * @author benomi
  */
 public class Autotest {
-
+    private static List<WebElement> friendList;
+    private static String profName;
+    private static ArrayList<String> finalFriends = new ArrayList<String> (Arrays.asList("List of facebook Friends"));
     /**
      * @param args the command line arguments
      */
@@ -69,14 +81,15 @@ public class Autotest {
         password.sendKeys(Keys.ENTER);
         
         try {
-            Thread.sleep(3000);
+            Thread.sleep(8000);
         } catch (Exception e) {
             
         }
+        WebElement pLink = driver.findElement(By.xpath("//*[@data-testid=\"blue_bar_profile_link\"]"));
+        pLink.click();
         
-        driver.navigate().to("https://www.facebook.com/" + email);
         try {
-            Thread.sleep(300);
+            Thread.sleep(8000);
         } catch (Exception e) {
             
         }
@@ -84,7 +97,15 @@ public class Autotest {
         WebElement fLink = driver.findElement(By.xpath("//*[@data-tab-key=\"friends\"]"));
         fLink.click();
         
+        
+        try {
+            Thread.sleep(8000);
+        } catch (Exception e) {
+            
+        }
+        
         int nFriends = Integer.parseInt(driver.findElement(By.xpath("//*[@id=\"u_0_q\"]/div/a[3]/span[1]")).getText());
+        profName = driver.findElement(By.id("fb-timeline-cover-name")).getText().toString();
         
         System.out.println("You have " + nFriends + " facebook friends.");
         
@@ -94,30 +115,20 @@ public class Autotest {
             
         }
         
-        List<WebElement> friendList;
-        int current;
+        int current = 0;
         
-        do {
+        for (int i = 0; i < nFriends/18; i++) {
+            js.executeScript("scroll(0, 10000000000000);");
             try {
-                Thread.sleep(3000);
+                Thread.sleep(2500);
             } catch (Exception e) {
-                
+
             }
             
-            friendList = driver.findElements(By.xpath("//*[@class=\"fsl fwb fcb\"]"));
+            friendList = driver.findElements(By.xpath("//div[@class='fsl fwb fcb']/a"));
             current = friendList.size();
-            
-            System.out.println(current);
-            
-            if (!driver.findElement(By.xpath("//*[@class=\"uiHeaderTitle\"]")).isDisplayed())
-            {
-                js.executeScript("scroll(0, 250);");  
-            }
+            System.out.println("Found " + current + "Friends!");
         }
-        while (current < nFriends);
-        
-        //js.executeScript("scroll(0, 250);");        
-        
         
         try {
             Thread.sleep(8000);
@@ -125,6 +136,31 @@ public class Autotest {
             
         }
         
+        for (int j = 0; j < friendList.size(); j++)  {
+            System.out.println(friendList.get(j).getText().toString());            
+            finalFriends.add(friendList.get(j).getText().toString());
+        }
+        
+        try {
+            writeExcel(finalFriends);
+        } catch (Exception e) {
+            
+        }       
+        
         driver.close();
+    }
+    
+    public static void writeExcel(List names) throws IOException{
+        HSSFWorkbook excel = new HSSFWorkbook();
+        HSSFSheet list = excel.createSheet("Facebook Friends");
+        
+        for (int i=0; i < names.size(); i++) {
+            Row r = list.createRow(i);
+            r.createCell(0).setCellValue(names.get(i).toString());
+         }
+         
+        try (FileOutputStream outputStream = new FileOutputStream("Friends of " + profName + ".xlsx")) {
+            excel.write(outputStream);
+        }
     }
 }
